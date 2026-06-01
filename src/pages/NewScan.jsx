@@ -484,8 +484,14 @@ export default function NewScan() {
         <ScanProgressModal
           key={scanProgress.scanId || scanProgress.targetName}
           scanProgress={scanProgress}
-          onAction={() => scanProgress.status === 'FAILED' ? setScanProgress(null) : navigate('/')}
-          actionLabel={scanProgress.status === 'FAILED' ? 'Tutup' : scanProgress.status === 'COMPLETED' ? 'Buka Dashboard' : 'Pantau di Dashboard'}
+          onAction={() => {
+            if (scanProgress.status === 'FAILED') {
+              setScanProgress(null);
+            } else if (scanProgress.status === 'COMPLETED') {
+              navigate('/');
+            }
+          }}
+          actionLabel={scanProgress.status === 'FAILED' ? 'Tutup' : scanProgress.status === 'COMPLETED' ? 'Buka Dashboard' : 'Scan Sedang Berjalan...'}
         />
       )}
     </div>

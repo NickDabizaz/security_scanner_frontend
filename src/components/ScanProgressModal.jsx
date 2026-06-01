@@ -6,9 +6,14 @@ export default function ScanProgressModal({ scanProgress, onAction, actionLabel 
   const isProgressActive = ['SUBMITTING', 'PENDING', 'RUNNING'].includes(scanProgress.status);
   const [completedChecks, setCompletedChecks] = useState(scanProgress.status === 'COMPLETED' ? progressCatalog.length : 0);
   const activeCheckRef = useRef(null);
-  const visibleCompletedChecks = scanProgress.status === 'COMPLETED' ? progressCatalog.length : completedChecks;
+  const visibleCompletedChecks = completedChecks;
 
   useEffect(() => {
+    if (scanProgress.status === 'COMPLETED') {
+      setCompletedChecks(progressCatalog.length);
+      return undefined;
+    }
+
     if (!isProgressActive) return undefined;
 
     const interval = window.setInterval(() => {
@@ -16,7 +21,7 @@ export default function ScanProgressModal({ scanProgress, onAction, actionLabel 
     }, 180);
 
     return () => window.clearInterval(interval);
-  }, [isProgressActive, progressCatalog.length]);
+  }, [isProgressActive, scanProgress.status, progressCatalog.length]);
 
   useEffect(() => {
     activeCheckRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
@@ -136,7 +141,8 @@ export default function ScanProgressModal({ scanProgress, onAction, actionLabel 
             <button
               type="button"
               onClick={onAction}
-              className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-blue-500/20 bg-blue-600 px-4 py-2.5 text-[10px] font-bold text-white transition-colors hover:bg-blue-500"
+              disabled={isProgressActive}
+              className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-blue-500/20 bg-blue-600 px-4 py-2.5 text-[10px] font-bold text-white transition-colors hover:bg-blue-500 disabled:opacity-50 disabled:pointer-events-none"
             >
               <span>{actionLabel}</span>
               {scanProgress.status !== 'FAILED' && <ArrowRight className="h-3.5 w-3.5" />}
