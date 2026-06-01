@@ -926,18 +926,19 @@ export default function ScanDetail() {
       {/* =========================================================================
           B. CORPORATE PDF REPORT CONTAINER (PRINT PREVIEW STYLED - SCREEN HIDDEN)
           ========================================================================= */}
-      <div className="hidden print:block text-slate-900 bg-white p-6 md:p-12 font-sans text-xs leading-relaxed max-w-4xl mx-auto">
+      <div className="print-report hidden print:block text-slate-900 bg-white p-6 md:p-12 font-sans text-xs leading-relaxed max-w-4xl mx-auto">
         
         {/* Cover Header Cover Sheet Block */}
-        <div className="border-4 border-slate-950 p-6 md:p-10 mb-8 rounded-lg relative">
-          <div className="flex items-center justify-between border-b-2 border-slate-900 pb-6 mb-6">
+        <div className="print-report-cover border-4 border-slate-950 p-6 md:p-10 mb-8 rounded-lg relative overflow-hidden">
+          <div className="print-report-accent absolute inset-x-0 top-0 h-2" />
+          <div className="print-report-header flex items-center justify-between border-b-2 border-slate-900 pb-6 mb-6">
             <div>
-              <span className="text-xs uppercase tracking-widest font-extrabold text-slate-500 block mb-1">GRFYN SECURITY SCANNER</span>
+              <span className="print-report-eyebrow text-xs uppercase tracking-widest font-extrabold text-slate-500 block mb-1">GRFYN SECURITY SCANNER</span>
               <h1 className="text-3xl font-extrabold text-slate-950 tracking-wider">SECURE AUDIT REPORT</h1>
             </div>
             <div className="text-right">
               <span className="text-xxs uppercase font-bold text-slate-400 block">CONFIDENTIAL REPORT</span>
-              <span className="text-xs font-mono font-bold px-2.5 py-1 bg-slate-950 text-white rounded mt-1 inline-block select-all">{scanReferenceCode}</span>
+              <span className="print-report-reference text-xs font-mono font-bold px-2.5 py-1 bg-slate-950 text-white rounded mt-1 inline-block select-all">{scanReferenceCode}</span>
             </div>
           </div>
 
@@ -963,7 +964,7 @@ export default function ScanDetail() {
           </div>
 
           {/* executive posture summary block */}
-          <div className="bg-slate-50 border border-slate-200 p-4 rounded-lg flex items-center justify-between">
+          <div className="print-report-summary bg-slate-50 border border-slate-200 p-4 rounded-lg flex items-center justify-between">
             <div>
               <strong className="text-slate-950 text-xs block mb-1">Severity Statistics / Statistik Temuan:</strong>
               <div className="flex gap-4 font-mono font-bold text-xxs">
@@ -980,13 +981,13 @@ export default function ScanDetail() {
             </div>
           </div>
 
-          <div className="text-slate-400 text-[9px] mt-6 italic border-t border-slate-100 pt-4 leading-normal">
+          <div className="print-confidentiality text-slate-400 text-[9px] mt-6 italic border-t border-slate-100 pt-4 leading-normal">
             Pernyataan Rahasia: Dokumen laporan penilai kerentanan ini mengandung informasi keamanan yang bersifat sangat sensitif dan rahasia (CONFIDENTIAL). Distribusi dibatasi ketat untuk vendor pemilik sistem, administrator keamanan, dan perancang program terkait guna perbaikan kerentanan sistem.
           </div>
         </div>
 
         {/* Detailed Catalog expanded list for printing (Renders all occurrences sequentially) */}
-        <h2 className="text-lg font-bold text-slate-950 uppercase border-b-2 border-slate-900 pb-2 mb-4 tracking-wider">Security Vulnerabilities Catalog / Detail Temuan</h2>
+        <h2 className="print-section-title text-lg font-bold text-slate-950 uppercase border-b-2 border-slate-900 pb-2 mb-4 tracking-wider">Security Vulnerabilities Catalog / Detail Temuan</h2>
         
         {groupedFindings.length === 0 ? (
           <div className="text-center py-10 border border-dashed border-slate-200 rounded-lg">
@@ -1000,14 +1001,14 @@ export default function ScanDetail() {
             const cweInfo = getCweLinkAndId(group.cwe);
 
             return (
-              <div key={index} className="mb-8 pb-6 border-b border-slate-200 page-break-inside-avoid">
+              <div key={index} className="print-finding mb-8 pb-6 border-b border-slate-200 page-break-inside-avoid">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-[13px] font-extrabold text-slate-950 leading-tight">
                     {index + 1}. {group.title}
                   </h3>
                   <div className="flex gap-2">
-                    <span className="px-2 py-0.5 bg-slate-950 text-white rounded text-[9px] font-bold uppercase tracking-wider">{group.severity}</span>
-                    {cweInfo && <span className="px-2 py-0.5 bg-slate-100 border border-slate-200 rounded text-[9px] font-bold font-mono text-slate-700">{cweInfo.id}</span>}
+                    <span className={`print-severity-badge print-severity-${(group.severity || 'info').toLowerCase()} px-2 py-0.5 bg-slate-950 text-white rounded text-[9px] font-bold uppercase tracking-wider`}>{group.severity}</span>
+                    {cweInfo && <span className="print-cwe-badge px-2 py-0.5 bg-slate-100 border border-slate-200 rounded text-[9px] font-bold font-mono text-slate-700">{cweInfo.id}</span>}
                   </div>
                 </div>
 
@@ -1024,7 +1025,7 @@ export default function ScanDetail() {
 
                 {/* Threat Rationale */}
                 {bahaya && (
-                  <div className="mb-4 bg-slate-50 p-2.5 border-l-2 border-slate-950 rounded page-break-inside-avoid">
+                  <div className="print-threat-card mb-4 bg-slate-50 p-2.5 border-l-2 border-slate-950 rounded page-break-inside-avoid">
                     <h5 className="font-bold text-slate-900 text-xxs uppercase mb-1">
                       <span>Threat Impact / Alasan Bahaya (Dampak Risiko Eksploitasi):</span>
                     </h5>
@@ -1036,13 +1037,13 @@ export default function ScanDetail() {
                 <div className="mb-4 space-y-3">
                   <h5 className="font-bold text-slate-950 text-xxs uppercase mb-1">Affected Locations & Evidence / Lokasi & Bukti Kerentanan:</h5>
                   {group.occurrences.map((occ, oIdx) => (
-                    <div key={occ.id || oIdx} className="bg-slate-50 rounded border border-slate-200 overflow-hidden text-xxs font-mono page-break-inside-avoid">
-                      <div className="px-3 py-1 bg-slate-200/60 border-b border-slate-200 font-sans font-bold text-slate-700 flex justify-between">
+                    <div key={occ.id || oIdx} className="print-evidence-card bg-slate-50 rounded border border-slate-200 overflow-hidden text-xxs font-mono page-break-inside-avoid">
+                      <div className="print-evidence-header px-3 py-1 bg-slate-200/60 border-b border-slate-200 font-sans font-bold text-slate-700 flex justify-between">
                         <span>Occurrence #{oIdx + 1}: {occ.filePath}</span>
                         {occ.lineNumber && <span className="font-mono text-purple-700">Baris: {occ.lineNumber}</span>}
                       </div>
                       {occ.evidence && (
-                        <pre className="p-3 text-slate-800 text-[10px] overflow-x-auto whitespace-pre leading-relaxed select-text bg-white">
+                        <pre className="print-evidence-body p-3 text-slate-800 text-[10px] overflow-x-auto whitespace-pre leading-relaxed select-text bg-white">
                           {occ.evidence}
                         </pre>
                       )}
@@ -1051,7 +1052,7 @@ export default function ScanDetail() {
                 </div>
 
                 {/* Remediation Steps */}
-                <div className="bg-slate-50 border border-slate-200 p-4 rounded-lg mt-3">
+                <div className="print-remediation-card bg-slate-50 border border-slate-200 p-4 rounded-lg mt-3">
                   <h5 className="font-bold text-slate-950 text-xxs uppercase mb-1.5">Remediation Guide / Langkah Perbaikan (Mitigasi Rekomendasi):</h5>
                   <p className="text-slate-700 leading-relaxed text-[11px] whitespace-pre-wrap">{langkah || group.recommendation}</p>
 
@@ -1059,7 +1060,7 @@ export default function ScanDetail() {
                   {kodeAman && (
                     <div className="mt-3 pt-3 border-t border-slate-200 font-mono">
                       <span className="font-sans font-bold text-slate-500 text-[10px] uppercase block mb-1">Secure Code Reference / Acuan Kode Aman:</span>
-                      <pre className="bg-white p-3 border border-slate-200 rounded text-slate-900 text-[10px] whitespace-pre overflow-x-auto select-text leading-relaxed">
+                      <pre className="print-code-card bg-white p-3 border border-slate-200 rounded text-slate-900 text-[10px] whitespace-pre overflow-x-auto select-text leading-relaxed">
                         {kodeAman}
                       </pre>
                     </div>
@@ -1071,7 +1072,7 @@ export default function ScanDetail() {
         )}
 
         {/* Footer assessment signature */}
-        <div className="mt-12 pt-6 border-t-2 border-slate-900 flex justify-between items-center text-[10px] text-slate-500 font-semibold page-break-inside-avoid">
+        <div className="print-report-footer mt-12 pt-6 border-t-2 border-slate-900 flex justify-between items-center text-[10px] text-slate-500 font-semibold page-break-inside-avoid">
           <div>GRFYN SECURITY SCANNER &bull; SECURE AUDIT REPORT</div>
           <div className="text-right">APPROVED BY: SYSTEM SECURITY AUDITOR AGENT</div>
         </div>

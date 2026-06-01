@@ -71,20 +71,134 @@
     font-family: 'Inter', -apple-system, sans-serif !important;
   }
 
-  /* Reset layout constraints and background gradients */
-  .min-h-screen, main, div, section, header, footer {
-    background-color: transparent !important;
+  /* Keep the application shell clean while preserving report card colors. */
+  .min-h-screen, main {
+    background-color: white !important;
     background-image: none !important;
     box-shadow: none !important;
     text-shadow: none !important;
   }
 
   /* Force clean code wrapping to prevent text cutting */
-  pre, code {
+  .print-report pre, .print-report code {
     white-space: pre-wrap !important;
     word-break: break-all !important;
     font-size: 9px !important;
     color: #1e293b !important;
+  }
+
+  .print-report {
+    background: white !important;
+    color: #0f172a !important;
+  }
+
+  .print-report-cover {
+    background: linear-gradient(145deg, #f8fbff 0%, #ffffff 62%, #eef6ff 100%) !important;
+    border-color: #0f2b55 !important;
+    box-shadow: inset 0 0 0 1px #bfdbfe !important;
+  }
+
+  .print-report-accent {
+    background: linear-gradient(90deg, #0f2b55 0%, #2563eb 58%, #0f766e 100%) !important;
+  }
+
+  .print-report-header {
+    border-color: #2563eb !important;
+  }
+
+  .print-report-eyebrow {
+    color: #1d4ed8 !important;
+  }
+
+  .print-report-reference {
+    background: #0f2b55 !important;
+    color: white !important;
+  }
+
+  .print-report-summary {
+    background: linear-gradient(90deg, #eff6ff 0%, #f0fdfa 100%) !important;
+    border-color: #bfdbfe !important;
+  }
+
+  .print-confidentiality {
+    border-color: #bfdbfe !important;
+    color: #64748b !important;
+  }
+
+  .print-section-title {
+    border-color: #2563eb !important;
+    color: #0f2b55 !important;
+  }
+
+  .print-finding {
+    border-color: #bfdbfe !important;
+  }
+
+  .print-severity-badge {
+    color: white !important;
+  }
+
+  .print-severity-critical {
+    background: #b91c1c !important;
+  }
+
+  .print-severity-high {
+    background: #e11d48 !important;
+  }
+
+  .print-severity-medium {
+    background: #d97706 !important;
+  }
+
+  .print-severity-low {
+    background: #2563eb !important;
+  }
+
+  .print-severity-info {
+    background: #059669 !important;
+  }
+
+  .print-cwe-badge {
+    background: #dbeafe !important;
+    border-color: #93c5fd !important;
+    color: #1e3a8a !important;
+  }
+
+  .print-threat-card {
+    background: #fff7ed !important;
+    border-color: #f59e0b !important;
+  }
+
+  .print-evidence-card {
+    background: #f8fafc !important;
+    border-color: #bfdbfe !important;
+  }
+
+  .print-evidence-header {
+    background: #dbeafe !important;
+    border-color: #bfdbfe !important;
+    color: #1e3a8a !important;
+  }
+
+  .print-evidence-body {
+    background: white !important;
+    color: #1e293b !important;
+  }
+
+  .print-remediation-card {
+    background: #ecfdf5 !important;
+    border-color: #a7f3d0 !important;
+  }
+
+  .print-code-card {
+    background: #eff6ff !important;
+    border-color: #93c5fd !important;
+    color: #0f172a !important;
+  }
+
+  .print-report-footer {
+    border-color: #2563eb !important;
+    color: #475569 !important;
   }
 
   /* Page break rules for structured cataloging */
@@ -97,4 +211,3 @@
     margin: 15mm;
   }
 }
-
