@@ -25,6 +25,9 @@ export default {
         sans: ['Inter', 'sans-serif'],
         mono: ['Outfit', 'Fira Code', 'monospace'],
       },
+      fontSize: {
+        xxs: ['0.625rem', { lineHeight: '0.875rem' }],
+      },
       boxShadow: {
         'glass': '0 8px 32px 0 rgba(0, 0, 0, 0.37)',
         'glass-accent': '0 8px 32px 0 rgba(37, 99, 235, 0.2)',
