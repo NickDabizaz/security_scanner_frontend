@@ -1,17 +1,14 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { 
   User, 
   Shield, 
   Mail, 
   Calendar, 
   Coins, 
-  Database, 
   CheckCircle, 
   CreditCard,
-  ExternalLink,
   MessageSquare,
   Sparkles,
-  Check,
   X
 } from 'lucide-react';
 

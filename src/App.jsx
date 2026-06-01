@@ -1,4 +1,3 @@
-import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Navigation from './components/Navigation';
 import Login from './pages/Login';
@@ -30,14 +29,14 @@ function ProtectedRoute({ children }) {
       <footer className="print:hidden border-t border-white/5 bg-slate-950/40 backdrop-blur-sm select-none py-4 mt-auto">
         <div className="max-w-7xl mx-auto px-4 md:px-8 flex flex-col md:flex-row items-center justify-between gap-3">
           <div className="text-center md:text-left text-[9px] font-medium uppercase tracking-wider text-slate-500 font-sans">
-            © 2026 GRFYN Security Scanner &bull; Terminal Operator Portal &bull; All logs encrypted
+            &copy; 2026 GRFYN Security Scanner &bull; Defensive Assessment Portal
           </div>
           <div className="flex items-center gap-2 bg-emerald-500/5 hover:bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/15 text-emerald-400 text-[9px] font-bold tracking-wider transition-all duration-300 scale-95">
             <span className="relative flex h-1.5 w-1.5">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
             </span>
-            <span>SECURE SESSION ACTIVE / KONEKSI AMAN</span>
+            <span>AUTHORIZED DEFENSIVE SCANNING ONLY</span>
           </div>
         </div>
       </footer>
@@ -45,9 +44,19 @@ function ProtectedRoute({ children }) {
   );
 }
 
-export default function App() {
+function HomeRoute() {
   const token = localStorage.getItem('grfyn_token');
 
+  return token ? (
+    <ProtectedRoute>
+      <Dashboard />
+    </ProtectedRoute>
+  ) : (
+    <Landing />
+  );
+}
+
+export default function App() {
   return (
     <Router>
       <Routes>
@@ -58,15 +67,7 @@ export default function App() {
         {/* Protected Routes or Public Landing */}
         <Route
           path="/"
-          element={
-            token ? (
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            ) : (
-              <Landing />
-            )
-          }
+          element={<HomeRoute />}
         />
         
         <Route

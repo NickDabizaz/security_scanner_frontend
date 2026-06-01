@@ -73,9 +73,10 @@ export const authService = {
 };
 
 export const scanService = {
-  createLocalScan: (file) => {
+  createLocalScan: (file, authorizationConfirmed) => {
     const formData = new FormData();
     formData.append('file', file);
+    formData.append('authorizationConfirmed', String(authorizationConfirmed));
 
     // For file uploads, we delete the Content-Type header so the browser sets it automatically with the boundary parameters
     const token = localStorage.getItem('grfyn_token');
@@ -96,16 +97,16 @@ export const scanService = {
       return data;
     });
   },
-  createUrlScan: (url) => {
+  createUrlScan: (url, authorizationConfirmed) => {
     return makeRequest('/scans/url', {
       method: 'POST',
-      body: JSON.stringify({ url }),
+      body: JSON.stringify({ url, authorizationConfirmed }),
     });
   },
-  createGithubScan: (repoUrl, branch) => {
+  createGithubScan: (repoUrl, branch, authorizationConfirmed) => {
     return makeRequest('/scans/github', {
       method: 'POST',
-      body: JSON.stringify({ repoUrl, branch }),
+      body: JSON.stringify({ repoUrl, branch, authorizationConfirmed }),
     });
   },
   getHistory: () => {

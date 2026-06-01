@@ -1,18 +1,17 @@
-import React from 'react';
 import { Link } from 'react-router-dom';
 import { 
   Shield, 
   SearchCode, 
-  Terminal, 
   CheckCircle, 
-  Coins, 
-  ExternalLink,
-  Lock,
   Cpu,
-  Layers,
   FileCode,
-  Globe
+  Globe,
+  FileCheck2,
+  Scale,
+  Database,
+  Ban
 } from 'lucide-react';
+import { repositoryScanCatalog, scanCategorySummary } from '../data/scanCatalog';
 
 export default function Landing() {
   return (
@@ -34,9 +33,9 @@ export default function Landing() {
           {/* Quick Menus */}
           <div className="hidden md:flex items-center gap-6 text-slate-400 text-xs font-semibold uppercase tracking-wider">
             <a href="#features" className="hover:text-blue-400 transition-colors">Features</a>
-            <a href="#top10" className="hover:text-blue-400 transition-colors">Top 10 Flaws</a>
+            <a href="#coverage" className="hover:text-blue-400 transition-colors">50 Scan Rules</a>
             <a href="#tiers" className="hover:text-blue-400 transition-colors">Security Tiers</a>
-            <a href="#terms" className="hover:text-blue-400 transition-colors">API Docs</a>
+            <a href="#privacy" className="hover:text-blue-400 transition-colors">Privacy Policy</a>
           </div>
 
           <div className="flex items-center gap-3">
@@ -69,7 +68,7 @@ export default function Landing() {
         </h1>
 
         <p className="text-slate-400 text-sm md:text-base max-w-2xl leading-relaxed mb-10 animate-fadeIn">
-          Audit and harden your applications instantly. Upload static code ZIP repositories or passive probe online URLs. Enriched concurrently with OpenRouter AI security advisories, clean remediations, and secure code samples.
+          Audit aplikasi secara defensif melalui ZIP repository, repository publik GitHub, atau pemeriksaan URL pasif. Scanner hanya untuk aset milik sendiri atau aset yang telah memiliki izin tertulis.
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 animate-fadeIn">
@@ -97,9 +96,9 @@ export default function Landing() {
               <div className="p-3 bg-blue-500/10 text-blue-400 rounded-xl border border-blue-500/20 inline-block mb-5">
                 <FileCode className="w-6 h-6" />
               </div>
-              <h3 className="text-lg font-bold text-white mb-2">Static ZIP Code Audit</h3>
+              <h3 className="text-lg font-bold text-white mb-2">50-rule Repository Audit</h3>
               <p className="text-slate-400 text-xs leading-relaxed">
-                Scan your code archives recursively for hardcoded secrets, OS command injections, unsafe SQL concatenations, and vulnerable libraries with local Zip-Slip directory shields.
+                Audit ZIP atau repository publik GitHub secara read-only untuk secret, injection, konfigurasi, session, dan dependency baseline. Source code tidak pernah dijalankan.
               </p>
             </div>
 
@@ -108,9 +107,9 @@ export default function Landing() {
               <div className="p-3 bg-emerald-500/10 text-emerald-400 rounded-xl border border-emerald-500/20 inline-block mb-5">
                 <Globe className="w-6 h-6" />
               </div>
-              <h3 className="text-lg font-bold text-white mb-2">Passive Web Probing</h3>
+              <h3 className="text-lg font-bold text-white mb-2">Rate-limited Passive Web Review</h3>
               <p className="text-slate-400 text-xs leading-relaxed">
-                Audit live URLs for secure cookie attributes, HSTS flags, CORS wildcard misconfigurations, CSP headers, and probe for exposed staging backups and administrative panel leaks.
+                Periksa response header, cookie, dan beberapa path publik berisiko dengan request GET terbatas, timeout, rate limit, serta proteksi SSRF. Tidak ada brute force atau eksploitasi.
               </p>
             </div>
 
@@ -128,32 +127,34 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* 4. TOP 10 AUDIT FLAS CATALOG */}
-      <section id="top10" className="py-20 max-w-7xl mx-auto px-4 md:px-8 scroll-mt-16">
-        <div className="text-center max-w-2xl mx-auto mb-16">
-          <h2 className="text-2xl md:text-3xl font-extrabold text-white mb-3">Vulnerabilities Audited</h2>
-          <p className="text-slate-500 text-xs uppercase tracking-widest font-semibold">10 Jenis Kerentanan & Celah yang Diperiksa</p>
+      {/* 4. 50-RULE DEFENSIVE CATALOG */}
+      <section id="coverage" className="py-20 max-w-7xl mx-auto px-4 md:px-8 scroll-mt-16">
+        <div className="text-center max-w-2xl mx-auto mb-12">
+          <h2 className="text-2xl md:text-3xl font-extrabold text-white mb-3">50 Defensive Repository Checks</h2>
+          <p className="text-slate-500 text-xs uppercase tracking-widest font-semibold">50 jenis pemeriksaan source code read-only</p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-          {[
-            { id: '01', title: 'SQL Injection', cwe: 'CWE-89', desc: 'Raw database query concatenations.' },
-            { id: '02', title: 'Remote Code Exec', cwe: 'CWE-95', desc: 'Dynamic eval evaluations.' },
-            { id: '03', title: 'Secrets Leakage', cwe: 'CWE-798', desc: 'Hardcoded API tokens, keys.' },
-            { id: '04', title: 'OS Command Inj.', cwe: 'CWE-78', desc: 'Unchecked subprocess shells.' },
-            { id: '05', title: 'CORS Wildcard', cwe: 'CWE-942', desc: 'Permissive cross-origin access.' },
-            { id: '06', title: 'Cookie Flags Leak', cwe: 'CWE-614', desc: 'Insecure cookie configurations.' },
-            { id: '07', title: 'Exposed Env Files', cwe: 'CWE-538', desc: 'Bocoran file rahasia .env.' },
-            { id: '08', title: 'Git / SFTP Leak', cwe: 'CWE-200', desc: 'Exposed repository configs.' },
-            { id: '09', title: 'Staging Backups', cwe: 'CWE-538', desc: 'Exposed backups and config archives.' },
-            { id: '10', title: 'Monitoring Paths', cwe: 'CWE-489', desc: 'Active diagnostics portals.' }
-          ].map((v, i) => (
-            <div key={i} className="p-4 rounded-xl bg-white/5 border border-white/5 hover:border-white/10 hover:-translate-y-1 transition-all duration-300">
-              <span className="text-[10px] font-bold text-slate-500 font-mono block mb-1">CWE ID: {v.cwe}</span>
-              <strong className="text-white text-xs block mb-1">{v.title}</strong>
-              <p className="text-slate-400 text-[10px] leading-relaxed">{v.desc}</p>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-5">
+          {scanCategorySummary.map((category) => (
+            <div key={category.title} className="glass-panel p-4 border border-white/5">
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-blue-400">{category.title}</span>
+              <p className="mt-1 text-[10px] leading-relaxed text-slate-500">{category.detail}</p>
             </div>
           ))}
+        </div>
+
+        <div className="glass-panel border border-white/5 p-3">
+          <div className="max-h-[420px] overflow-y-auto pr-1 grid grid-cols-1 md:grid-cols-2 gap-2">
+            {repositoryScanCatalog.map((check) => (
+              <div key={check.id} className="flex gap-3 rounded-xl border border-white/5 bg-slate-950/30 px-3 py-2.5">
+                <span className="font-mono text-[10px] font-bold text-blue-400">{check.id}</span>
+                <div>
+                  <strong className="block text-xs text-white">{check.title}</strong>
+                  <p className="mt-0.5 text-[10px] leading-relaxed text-slate-500">{check.detail}</p>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -200,12 +201,12 @@ export default function Landing() {
                   PRO <span className="text-xs text-slate-400 font-sans font-medium">/ 1000 Credits Auto-seeded</span>
                 </div>
                 <p className="text-slate-300 text-xs leading-relaxed mb-6">
-                  Didesain untuk kebutuhan tim auditor pengembang. Akses penuh untuk pemeriksaan web URL, static fuzzer, dan pengayaan laporan AI Analyst secara paralel tanpa hambatan.
+                  Didesain untuk tim auditor pengembang. Akses penuh untuk pemeriksaan URL pasif dengan request GET terbatas, static analysis repository, dan pengayaan laporan AI Analyst.
                 </p>
               </div>
               <ul className="text-xxs text-slate-300 space-y-2 mb-6">
                 <li className="flex items-center gap-2"><CheckCircle className="w-3.5 h-3.5 text-emerald-500" /> Unlimited Scan Access</li>
-                <li className="flex items-center gap-2"><CheckCircle className="w-3.5 h-3.5 text-emerald-500" /> Active Web Probes & Fuzzing</li>
+                <li className="flex items-center gap-2"><CheckCircle className="w-3.5 h-3.5 text-emerald-500" /> Rate-limited Passive Web Review</li>
                 <li className="flex items-center gap-2"><CheckCircle className="w-3.5 h-3.5 text-emerald-500" /> OpenRouter AI Analyst Enrichment</li>
                 <li className="flex items-center gap-2"><CheckCircle className="w-3.5 h-3.5 text-emerald-500" /> Print-to-PDF Professional Reports</li>
               </ul>
@@ -217,13 +218,54 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* 6. SYSTEM FOOTER */}
+      {/* 6. PRIVACY AND RESPONSIBLE USE POLICY */}
+      <section id="privacy" className="scroll-mt-16 border-t border-white/5 bg-slate-950/40 py-20">
+        <div className="max-w-7xl mx-auto px-4 md:px-8">
+          <div className="mx-auto mb-12 max-w-3xl text-center">
+            <h2 className="mb-3 text-2xl font-extrabold text-white md:text-3xl">Privacy & Responsible Use Policy</h2>
+            <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">Kebijakan privasi dan penggunaan bertanggung jawab</p>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="glass-panel p-5">
+              <Scale className="mb-3 h-5 w-5 text-blue-400" />
+              <h3 className="mb-1 text-sm font-bold text-white">Aset berizin saja</h3>
+              <p className="text-xs leading-relaxed text-slate-400">
+                Pengguna wajib memiliki aset atau izin tertulis yang sah. Repository publik GitHub bukan berarti bebas dipindai tanpa otorisasi.
+              </p>
+            </div>
+            <div className="glass-panel p-5">
+              <Ban className="mb-3 h-5 w-5 text-red-400" />
+              <h3 className="mb-1 text-sm font-bold text-white">Tidak untuk tindakan merusak</h3>
+              <p className="text-xs leading-relaxed text-slate-400">
+                Layanan hanya untuk pemeriksaan dan pelaporan keamanan. Dilarang melakukan eksploitasi, brute force, gangguan layanan, perubahan data, persistence, atau akses tanpa izin.
+              </p>
+            </div>
+            <div className="glass-panel p-5">
+              <Database className="mb-3 h-5 w-5 text-emerald-400" />
+              <h3 className="mb-1 text-sm font-bold text-white">Pemrosesan data minimum</h3>
+              <p className="text-xs leading-relaxed text-slate-400">
+                Arsip repository diekstrak sementara untuk analisis read-only lalu dibersihkan. Laporan dan temuan disimpan agar operator dapat meninjau hasil perbaikan.
+              </p>
+            </div>
+            <div className="glass-panel p-5">
+              <FileCheck2 className="mb-3 h-5 w-5 text-amber-400" />
+              <h3 className="mb-1 text-sm font-bold text-white">Pelaporan yang bertanggung jawab</h3>
+              <p className="text-xs leading-relaxed text-slate-400">
+                Gunakan hasil scan untuk mitigasi dan disclosure yang terkoordinasi kepada pemilik sistem. Jangan unggah secret atau data pribadi yang tidak diperlukan untuk audit.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 7. SYSTEM FOOTER */}
       <footer className="border-t border-white/5 bg-slate-950/40 select-none py-6 mt-auto">
         <div className="max-w-7xl mx-auto px-4 md:px-8 flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <img src="/grfyn_logo.png" className="w-5 h-5 rounded" alt="GRFYN Logo" />
             <div className="text-left text-[9px] font-medium uppercase tracking-wider text-slate-500 font-sans">
-              © 2026 GRFYN Security Scanner &bull; Terminal Operator Portal &bull; All logs encrypted
+              &copy; 2026 GRFYN Security Scanner &bull; Defensive Assessment Portal
             </div>
           </div>
 
@@ -232,7 +274,7 @@ export default function Landing() {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
             </span>
-            <span>SECURE SYSTEM CONNECTION ESTABLISHED</span>
+            <span>RESPONSIBLE DISCLOSURE MODE ACTIVE</span>
           </div>
         </div>
       </footer>

@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Play, ShieldAlert, FolderGit, Globe, CheckSquare, Square, AlertCircle, AlertTriangle, HelpCircle, Coins, Lock, GitBranch, Layers, Server } from 'lucide-react';
+import { Play, ShieldAlert, FolderGit, Globe, CheckSquare, Square, AlertCircle, Coins, Lock, GitBranch, Layers, CheckCircle2, LoaderCircle, Clock3, ShieldCheck, ArrowRight, ListChecks } from 'lucide-react';
 import { scanService } from '../services/api';
+import { passiveWebScanCatalog, repositoryScanCatalog, scanCategorySummary } from '../data/scanCatalog';
 
 export default function NewScan() {
   const [activeTab, setActiveTab] = useState('local'); // 'local', 'github', or 'url'
@@ -13,10 +14,65 @@ export default function NewScan() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [dragActive, setDragActive] = useState(false);
+  const [completedChecks, setCompletedChecks] = useState(0);
+  const [scanProgress, setScanProgress] = useState(null);
+  const activeCheckRef = useRef(null);
   const navigate = useNavigate();
 
   const user = JSON.parse(localStorage.getItem('grfyn_user') || '{}');
   const isPro = user.plan === 'PRO';
+  const isProgressActive = scanProgress && ['SUBMITTING', 'PENDING', 'RUNNING'].includes(scanProgress.status);
+  const selectedScanCatalog = activeTab === 'url' ? passiveWebScanCatalog : repositoryScanCatalog;
+  const progressCatalog = scanProgress?.catalog || selectedScanCatalog;
+
+  useEffect(() => {
+    if (!isProgressActive) return undefined;
+
+    const interval = window.setInterval(() => {
+      setCompletedChecks((current) => Math.min(current + 1, progressCatalog.length - 1));
+    }, 180);
+
+    return () => window.clearInterval(interval);
+  }, [isProgressActive, progressCatalog.length]);
+
+  useEffect(() => {
+    if (!scanProgress?.scanId || !isProgressActive) return undefined;
+
+    let cancelled = false;
+    const refreshProgress = async () => {
+      try {
+        const detail = await scanService.getDetail(scanProgress.scanId);
+        if (cancelled) return;
+
+        setScanProgress((current) => ({
+          ...current,
+          status: detail.status,
+          errorMessage: detail.errorMessage,
+          findings: detail.findings?.length || 0,
+        }));
+
+        if (detail.status === 'COMPLETED') {
+          setCompletedChecks(progressCatalog.length);
+        }
+      } catch (pollError) {
+        if (!cancelled) {
+          console.error('Failed to refresh scan progress:', pollError.message);
+        }
+      }
+    };
+
+    refreshProgress();
+    const interval = window.setInterval(refreshProgress, 1200);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+    };
+  }, [scanProgress?.scanId, isProgressActive, progressCatalog.length]);
+
+  useEffect(() => {
+    activeCheckRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }, [completedChecks]);
 
   const handleDrag = (e) => {
     e.preventDefault();
@@ -85,25 +141,41 @@ export default function NewScan() {
     }
 
     setLoading(true);
+    setCompletedChecks(0);
+    setScanProgress({
+      scanId: null,
+      status: 'SUBMITTING',
+      findings: 0,
+      targetName: activeTab === 'local' ? file.name : activeTab === 'github' ? githubUrl : url,
+      catalog: selectedScanCatalog,
+    });
 
     try {
       let data;
       if (activeTab === 'local') {
-        data = await scanService.createLocalScan(file);
+        data = await scanService.createLocalScan(file, true);
       } else if (activeTab === 'github') {
-        data = await scanService.createGithubScan(githubUrl, githubBranch);
+        data = await scanService.createGithubScan(githubUrl, githubBranch, true);
       } else {
-        data = await scanService.createUrlScan(url);
+        data = await scanService.createUrlScan(url, true);
       }
 
       // Update user credits in localStorage
       const updatedUser = { ...user, credit: data.remainingCredit };
       localStorage.setItem('grfyn_user', JSON.stringify(updatedUser));
 
-      // Route to dashboard to see background scan status
-      navigate('/');
+      setScanProgress((current) => ({
+        ...current,
+        scanId: data.scanId,
+        status: data.status,
+      }));
     } catch (err) {
       setError(err.message || 'Gagal memulai scan. Periksa sisa kredit atau kredensial Anda.');
+      setScanProgress((current) => ({
+        ...current,
+        status: 'FAILED',
+        errorMessage: err.message || 'Gagal memulai scan.',
+      }));
     } finally {
       setLoading(false);
     }
@@ -340,83 +412,42 @@ export default function NewScan() {
         )}
       </div>
 
-      {/* 10 Security Scan Coverage Panel */}
+      {/* 50 Security Scan Coverage Panel */}
       <div className="glass-panel p-5 mb-6 animate-fadeIn">
-        <h3 className="text-xs font-extrabold text-white mb-3.5 uppercase tracking-wider flex items-center gap-2">
-          <Layers className="w-4 h-4 text-blue-400" />
-          <span>10 Cakupan Scan Keamanan / 10 Audited Security Scans</span>
-        </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xxs leading-relaxed">
-          <div className="bg-slate-900/50 p-2.5 rounded-lg border border-white/5 flex gap-2">
-            <span className="text-blue-400 font-mono font-bold">01</span>
-            <div>
-              <strong className="text-white block">Injeksi SQL (SQL Injection)</strong>
-              <span className="text-slate-400 block mt-0.5">Deteksi query database SQL mentah yang tidak aman.</span>
-            </div>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+          <div>
+            <h3 className="text-xs font-extrabold text-white uppercase tracking-wider flex items-center gap-2">
+              <Layers className="w-4 h-4 text-blue-400" />
+              <span>50 Rule Static Repository / 50 Pemeriksaan Source Code</span>
+            </h3>
+            <p className="text-slate-500 text-[10px] mt-1">
+              GitHub dan ZIP dianalisis secara read-only. Kode tidak pernah dijalankan atau diinstal.
+            </p>
           </div>
-          <div className="bg-slate-900/50 p-2.5 rounded-lg border border-white/5 flex gap-2">
-            <span className="text-blue-400 font-mono font-bold">02</span>
-            <div>
-              <strong className="text-white block">Eksekusi Kode (Remote Code Exec)</strong>
-              <span className="text-slate-400 block mt-0.5">Analisis pemanggilan fungsi evaluasi kode dinamis berbahaya.</span>
+          <span className="shrink-0 self-start rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-[9px] font-extrabold uppercase tracking-wider text-emerald-400">
+            Defensive only
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
+          {scanCategorySummary.map((category) => (
+            <div key={category.title} className="rounded-xl border border-white/5 bg-slate-950/30 p-3">
+              <strong className="block text-[10px] uppercase tracking-wider text-blue-300">{category.title}</strong>
+              <span className="mt-1 block text-[10px] leading-relaxed text-slate-500">{category.detail}</span>
             </div>
-          </div>
-          <div className="bg-slate-900/50 p-2.5 rounded-lg border border-white/5 flex gap-2">
-            <span className="text-blue-400 font-mono font-bold">03</span>
-            <div>
-              <strong className="text-white block">Injeksi Perintah OS (OS Command Inj.)</strong>
-              <span className="text-slate-400 block mt-0.5">Deteksi eksekusi shell console OS tanpa sanitasi masukan.</span>
+          ))}
+        </div>
+
+        <div className="max-h-56 overflow-y-auto pr-1 space-y-1.5">
+          {repositoryScanCatalog.map((check) => (
+            <div key={check.id} className="flex gap-2.5 rounded-lg border border-white/5 bg-slate-900/40 px-3 py-2 text-[10px]">
+              <span className="font-mono font-bold text-blue-400">{check.id}</span>
+              <div>
+                <strong className="text-slate-200">{check.title}</strong>
+                <span className="ml-2 text-slate-500">{check.detail}</span>
+              </div>
             </div>
-          </div>
-          <div className="bg-slate-900/50 p-2.5 rounded-lg border border-white/5 flex gap-2">
-            <span className="text-blue-400 font-mono font-bold">04</span>
-            <div>
-              <strong className="text-white block">Kebocoran JWT (Hardcoded JWT Secret)</strong>
-              <span className="text-slate-400 block mt-0.5">Memeriksa penulisan kunci rahasia token langsung pada kode.</span>
-            </div>
-          </div>
-          <div className="bg-slate-900/50 p-2.5 rounded-lg border border-white/5 flex gap-2">
-            <span className="text-blue-400 font-mono font-bold">05</span>
-            <div>
-              <strong className="text-white block">Kebocoran Kredensial & Token API</strong>
-              <span className="text-slate-400 block mt-0.5">Deteksi AWS access keys, password DB, dan kunci API rahasia.</span>
-            </div>
-          </div>
-          <div className="bg-slate-900/50 p-2.5 rounded-lg border border-white/5 flex gap-2">
-            <span className="text-blue-400 font-mono font-bold">06</span>
-            <div>
-              <strong className="text-white block">Eksposur File Lingkungan (.env)</strong>
-              <span className="text-slate-400 block mt-0.5">Mendeteksi berkas .env rahasia aktif di dalam repositori.</span>
-            </div>
-          </div>
-          <div className="bg-slate-900/50 p-2.5 rounded-lg border border-white/5 flex gap-2">
-            <span className="text-blue-400 font-mono font-bold">07</span>
-            <div>
-              <strong className="text-white block">Eksposur Domain Internal / Staging</strong>
-              <span className="text-slate-400 block mt-0.5">Memeriksa tautan dashboard dev atau backend staging internal.</span>
-            </div>
-          </div>
-          <div className="bg-slate-900/50 p-2.5 rounded-lg border border-white/5 flex gap-2">
-            <span className="text-blue-400 font-mono font-bold">08</span>
-            <div>
-              <strong className="text-white block">CORS Terbuka (Wildcard CORS)</strong>
-              <span className="text-slate-400 block mt-0.5">Deteksi izin asal origin * yang terlalu longgar pada API.</span>
-            </div>
-          </div>
-          <div className="bg-slate-900/50 p-2.5 rounded-lg border border-white/5 flex gap-2">
-            <span className="text-blue-400 font-mono font-bold">09</span>
-            <div>
-              <strong className="text-white block">Mode Debug Aktif (Debug Mode dev)</strong>
-              <span className="text-slate-400 block mt-0.5">Memeriksa setelan debug aktif yang membocorkan detail stack trace.</span>
-            </div>
-          </div>
-          <div className="bg-slate-900/50 p-2.5 rounded-lg border border-white/5 flex gap-2">
-            <span className="text-blue-400 font-mono font-bold">10</span>
-            <div>
-              <strong className="text-white block">Komponen Dependensi Rentan (CVEs)</strong>
-              <span className="text-slate-400 block mt-0.5">Pemindaian package.json terhadap versi pustaka rentan (CVE-2024).</span>
-            </div>
-          </div>
+          ))}
         </div>
       </div>
 
@@ -437,7 +468,7 @@ export default function NewScan() {
 
         <div className="text-xs text-slate-300 leading-relaxed">
           <span className="font-bold text-white block mb-0.5">Persetujuan Otoritas Scan</span>
-          Saya dengan ini menyatakan dan menjamin bahwa saya memiliki otoritas kepemilikan penuh atau telah mendapatkan izin tertulis secara sah untuk melakukan pemindaian keamanan cyber pada aset target. Saya bertanggung jawab penuh atas hasil diagnosis ini.
+          Saya menyatakan bahwa aset target adalah milik saya atau saya memiliki izin tertulis yang sah untuk melakukan pemeriksaan. Saya hanya akan memakai hasil scan untuk perbaikan dan pelaporan keamanan, tanpa eksploitasi, gangguan layanan, perubahan data, atau akses yang tidak diizinkan.
         </div>
       </div>
 
@@ -469,6 +500,131 @@ export default function NewScan() {
           )}
         </button>
       </div>
+
+      {scanProgress && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-cyber-950/85 p-4 backdrop-blur-md animate-fadeIn" role="dialog" aria-modal="true" aria-labelledby="scan-progress-title">
+          <div className="glass-panel w-full max-w-2xl overflow-hidden border border-blue-500/20 shadow-2xl">
+            <div className="border-b border-white/5 bg-slate-950/50 p-5">
+              <div className="flex items-start gap-3">
+                <div className={`rounded-xl border p-2.5 ${
+                  scanProgress.status === 'COMPLETED'
+                    ? 'border-emerald-500/25 bg-emerald-500/10 text-emerald-400'
+                    : scanProgress.status === 'FAILED'
+                    ? 'border-red-500/25 bg-red-500/10 text-red-400'
+                    : 'border-blue-500/25 bg-blue-500/10 text-blue-400'
+                }`}>
+                  {scanProgress.status === 'COMPLETED' ? (
+                    <ShieldCheck className="h-5 w-5" />
+                  ) : scanProgress.status === 'FAILED' ? (
+                    <AlertCircle className="h-5 w-5" />
+                  ) : (
+                    <LoaderCircle className="h-5 w-5 animate-spin" />
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                    <h2 id="scan-progress-title" className="text-sm font-extrabold text-white">
+                      {scanProgress.status === 'COMPLETED'
+                        ? 'Scan selesai diproses'
+                        : scanProgress.status === 'FAILED'
+                        ? 'Scan tidak dapat dilanjutkan'
+                        : 'Proses scan sedang berjalan'}
+                    </h2>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                      {completedChecks}/{progressCatalog.length} kontrol
+                    </span>
+                  </div>
+                  <p className="mt-1 truncate text-[10px] font-mono text-slate-400" title={scanProgress.targetName}>
+                    {scanProgress.targetName}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-white/5">
+                <div
+                  className={`h-full rounded-full transition-all duration-500 ${
+                    scanProgress.status === 'FAILED' ? 'bg-red-500' : 'bg-gradient-to-r from-blue-500 to-emerald-400'
+                  }`}
+                  style={{ width: `${Math.round((completedChecks / progressCatalog.length) * 100)}%` }}
+                />
+              </div>
+            </div>
+
+            <div className="p-5">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <ListChecks className="h-4 w-4 text-blue-400" />
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-300">
+                    Pemeriksaan defensif read-only
+                  </span>
+                </div>
+                <span className="text-[9px] text-slate-500">Scroll untuk melihat seluruh daftar</span>
+              </div>
+
+              <div className="max-h-[340px] space-y-1.5 overflow-y-auto pr-1">
+                {progressCatalog.map((check, index) => {
+                  const isComplete = scanProgress.status === 'COMPLETED' || index < completedChecks;
+                  const isCurrent = isProgressActive && index === completedChecks;
+
+                  return (
+                    <div
+                      key={check.id}
+                      ref={isCurrent ? activeCheckRef : null}
+                      className={`flex items-center gap-2.5 rounded-lg border px-3 py-2 transition-colors ${
+                        isCurrent
+                          ? 'border-blue-500/30 bg-blue-500/10'
+                          : isComplete
+                          ? 'border-emerald-500/10 bg-emerald-500/5'
+                          : 'border-white/5 bg-slate-950/30'
+                      }`}
+                    >
+                      {isComplete ? (
+                        <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-400" />
+                      ) : isCurrent ? (
+                        <LoaderCircle className="h-3.5 w-3.5 shrink-0 animate-spin text-blue-400" />
+                      ) : (
+                        <Clock3 className="h-3.5 w-3.5 shrink-0 text-slate-600" />
+                      )}
+                      <span className="w-5 shrink-0 font-mono text-[9px] font-bold text-slate-500">{check.id}</span>
+                      <div className="min-w-0 flex-1">
+                        <strong className={`block truncate text-[10px] ${isCurrent ? 'text-blue-200' : isComplete ? 'text-slate-300' : 'text-slate-500'}`}>
+                          {check.title}
+                        </strong>
+                        <span className="block truncate text-[9px] text-slate-600">{check.detail}</span>
+                      </div>
+                      <span className={`shrink-0 text-[8px] font-bold uppercase tracking-wider ${
+                        isComplete ? 'text-emerald-400' : isCurrent ? 'text-blue-400' : 'text-slate-600'
+                      }`}>
+                        {isComplete ? 'selesai' : isCurrent ? 'memeriksa' : 'antri'}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {scanProgress.status === 'FAILED' && (
+                <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-[10px] leading-relaxed text-red-300">
+                  {scanProgress.errorMessage || 'Scan gagal diproses. Silakan periksa target dan coba kembali.'}
+                </div>
+              )}
+
+              <div className="mt-4 flex flex-col gap-3 border-t border-white/5 pt-4 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-[10px] leading-relaxed text-slate-500">
+                  Scanner hanya membaca arsip atau response target untuk pelaporan keamanan. Tidak ada eksploitasi atau perubahan data.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => scanProgress.status === 'FAILED' ? setScanProgress(null) : navigate('/')}
+                  className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-blue-500/20 bg-blue-600 px-4 py-2.5 text-[10px] font-bold text-white transition-colors hover:bg-blue-500"
+                >
+                  <span>{scanProgress.status === 'FAILED' ? 'Tutup' : scanProgress.status === 'COMPLETED' ? 'Buka Dashboard' : 'Pantau di Dashboard'}</span>
+                  {scanProgress.status !== 'FAILED' && <ArrowRight className="h-3.5 w-3.5" />}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

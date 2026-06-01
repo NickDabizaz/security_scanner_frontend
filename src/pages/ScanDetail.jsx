@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { 
   ArrowLeft, 
@@ -18,7 +18,6 @@ import {
   Printer,
   FileText,
   Activity,
-  Shield,
   Download,
   X,
   Check,
@@ -64,7 +63,7 @@ const parseDescription = (desc) => {
 const parseRecommendation = (rec) => {
   if (!rec) return { langkah: '', kodeAman: '', bahasaKode: 'javascript' };
   
-  let langkah = '';
+  let langkah;
   let kodeAman = '';
   let bahasaKode = 'javascript'; // Default fallback
   

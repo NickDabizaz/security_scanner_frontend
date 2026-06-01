@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { LayoutDashboard, Shield, Play, History, ArrowUpRight, AlertTriangle, ShieldCheck, RefreshCw, Layers, Trash2, Archive } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { LayoutDashboard, Play, History, ArrowUpRight, AlertTriangle, ShieldCheck, RefreshCw, Trash2 } from 'lucide-react';
 import { scanService, authService } from '../services/api';
 
 export default function Dashboard() {
@@ -10,8 +10,6 @@ export default function Dashboard() {
   const [currentUser, setCurrentUser] = useState(null);
   const [activeLogTab, setActiveLogTab] = useState('active'); // 'active' or 'historical'
   const [scanToDelete, setScanToDelete] = useState(null);
-  const navigate = useNavigate();
-
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -33,7 +31,11 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
-    fetchData();
+    const timeout = window.setTimeout(() => {
+      fetchData();
+    }, 0);
+
+    return () => window.clearTimeout(timeout);
   }, []);
 
   const confirmDelete = async () => {
