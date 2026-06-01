@@ -5,7 +5,8 @@ import ScanProgressModal from '../components/ScanProgressModal';
 import { passiveWebScanCatalog, repositoryScanCatalog } from '../data/scanCatalog';
 import { scanService, authService } from '../services/api';
 
-const isActiveScan = (scan) => scan.status === 'PENDING' || scan.status === 'RUNNING';
+const isInProgressScan = (scan) => scan.status === 'PENDING' || scan.status === 'RUNNING';
+const isArchivedScan = (scan) => scan.status === 'HISTORICAL';
 
 export default function Dashboard() {
   const [scans, setScans] = useState([]);
@@ -44,7 +45,7 @@ export default function Dashboard() {
     return () => window.clearTimeout(timeout);
   }, [fetchData]);
 
-  const runningScan = scans.find(isActiveScan);
+  const runningScan = scans.find(isInProgressScan);
   const activeProgressScan = runningScan && !dismissedProgressScanIds.includes(String(runningScan.id))
     ? runningScan
     : null;
@@ -105,12 +106,12 @@ export default function Dashboard() {
   const totalScans = scans.length;
   const completedScans = scans.filter(s => s.status === 'COMPLETED').length;
   const failedScans = scans.filter(s => s.status === 'FAILED').length;
-  const activeScans = scans.filter(isActiveScan);
-  const historyScans = scans.filter(scan => !isActiveScan(scan));
-  const pendingScans = activeScans.length;
+  const activeScans = scans.filter(scan => !isArchivedScan(scan));
+  const historyScans = scans.filter(isArchivedScan);
+  const pendingScans = scans.filter(isInProgressScan).length;
   const totalFindings = scans.reduce((acc, curr) => acc + (curr.totalFindings || 0), 0);
 
-  // Keep in-progress work separate from every scan that has already stopped.
+  // Keep current scan records separate from versions archived by a rescan.
   const displayedScans = activeLogTab === 'active' ? activeScans : historyScans;
 
   return (
