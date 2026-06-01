@@ -5,12 +5,14 @@ import ScanProgressModal from '../components/ScanProgressModal';
 import { passiveWebScanCatalog, repositoryScanCatalog } from '../data/scanCatalog';
 import { scanService, authService } from '../services/api';
 
+const isActiveScan = (scan) => scan.status === 'PENDING' || scan.status === 'RUNNING';
+
 export default function Dashboard() {
   const [scans, setScans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [currentUser, setCurrentUser] = useState(null);
-  const [activeLogTab, setActiveLogTab] = useState('active'); // 'active' or 'historical'
+  const [activeLogTab, setActiveLogTab] = useState('active'); // 'active' or 'history'
   const [scanToDelete, setScanToDelete] = useState(null);
   const [dismissedProgressScanIds, setDismissedProgressScanIds] = useState([]);
 
@@ -42,7 +44,7 @@ export default function Dashboard() {
     return () => window.clearTimeout(timeout);
   }, [fetchData]);
 
-  const runningScan = scans.find((scan) => scan.status === 'PENDING' || scan.status === 'RUNNING');
+  const runningScan = scans.find(isActiveScan);
   const activeProgressScan = runningScan && !dismissedProgressScanIds.includes(String(runningScan.id))
     ? runningScan
     : null;
@@ -103,17 +105,13 @@ export default function Dashboard() {
   const totalScans = scans.length;
   const completedScans = scans.filter(s => s.status === 'COMPLETED').length;
   const failedScans = scans.filter(s => s.status === 'FAILED').length;
-  const pendingScans = scans.filter(s => s.status === 'PENDING' || s.status === 'RUNNING').length;
+  const activeScans = scans.filter(isActiveScan);
+  const historyScans = scans.filter(scan => !isActiveScan(scan));
+  const pendingScans = activeScans.length;
   const totalFindings = scans.reduce((acc, curr) => acc + (curr.totalFindings || 0), 0);
 
-  // Filter scans based on active vs historical log tab
-  const displayedScans = scans.filter(scan => {
-    if (activeLogTab === 'historical') {
-      return scan.status === 'HISTORICAL';
-    } else {
-      return scan.status !== 'HISTORICAL';
-    }
-  });
+  // Keep in-progress work separate from every scan that has already stopped.
+  const displayedScans = activeLogTab === 'active' ? activeScans : historyScans;
 
   return (
     <div className="max-w-7xl mx-auto px-4 md:px-8 py-8 select-none">
@@ -242,17 +240,17 @@ export default function Dashboard() {
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              History ({scans.filter(s => s.status !== 'HISTORICAL').length})
+              AKTIF ({activeScans.length})
             </button>
             <button
-              onClick={() => setActiveLogTab('historical')}
+              onClick={() => setActiveLogTab('history')}
               className={`px-3 py-1 rounded-lg text-[10px] font-bold transition-all duration-300 ${
-                activeLogTab === 'historical'
+                activeLogTab === 'history'
                   ? 'bg-blue-600 text-white shadow-md'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              Arsip ({scans.filter(s => s.status === 'HISTORICAL').length})
+              HISTORY ({historyScans.length})
             </button>
           </div>
         </div>
@@ -267,9 +265,9 @@ export default function Dashboard() {
             <ShieldCheck className="w-10 h-10 text-slate-600 mx-auto mb-3" />
             {activeLogTab === 'active' ? (
               <>
-                <h3 className="text-white font-semibold text-sm mb-1">Riwayat Scan Kosong</h3>
+                <h3 className="text-white font-semibold text-sm mb-1">Tidak Ada Scan Aktif</h3>
                 <p className="text-slate-500 text-xs max-w-sm mx-auto mb-4">
-                  Belum ada repositori atau URL yang dipindai. Jalankan pemindaian pertama Anda untuk melihat history.
+                  Scan yang sedang berjalan akan tampil di sini. Jalankan pemindaian baru untuk memulai pemeriksaan.
                 </p>
                 <Link to="/scan/new" className="glass-button bg-blue-600 hover:bg-blue-500 shadow-lg border border-blue-500/20 hover:shadow-glass-accent inline-flex py-2 px-3.5 rounded-lg text-xs font-bold gap-2">
                   <Play className="w-3 h-3 fill-white" />
@@ -278,9 +276,9 @@ export default function Dashboard() {
               </>
             ) : (
               <>
-                <h3 className="text-white font-semibold text-sm mb-1">Arsip Kosong</h3>
+                <h3 className="text-white font-semibold text-sm mb-1">History Scan Kosong</h3>
                 <p className="text-slate-500 text-xs max-w-sm mx-auto">
-                  Belum ada riwayat lama yang diarsipkan. Arsip otomatis tersimpan saat Anda melakukan 'Scan Ulang' pada target.
+                  Scan yang sudah selesai atau gagal akan otomatis tersimpan di history.
                 </p>
               </>
             )}
@@ -339,7 +337,7 @@ export default function Dashboard() {
                           {scan.status === 'RUNNING' && (
                             <span className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-pulse"></span>
                           )}
-                          {scan.status === 'HISTORICAL' ? 'HISTORICAL / ARSIP' : scan.status}
+                          {scan.status === 'HISTORICAL' ? 'HISTORY' : scan.status}
                         </span>
                       </td>
                       <td className="py-3 pr-4 text-slate-400 font-mono select-text text-xxs">
