@@ -1,6 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { LayoutDashboard, Play, History, ArrowUpRight, AlertTriangle, ShieldCheck, RefreshCw, Trash2 } from 'lucide-react';
+import ScanProgressModal from '../components/ScanProgressModal';
+import { passiveWebScanCatalog, repositoryScanCatalog } from '../data/scanCatalog';
 import { scanService, authService } from '../services/api';
 
 export default function Dashboard() {
@@ -10,9 +12,11 @@ export default function Dashboard() {
   const [currentUser, setCurrentUser] = useState(null);
   const [activeLogTab, setActiveLogTab] = useState('active'); // 'active' or 'historical'
   const [scanToDelete, setScanToDelete] = useState(null);
-  const fetchData = async () => {
+  const [dismissedProgressScanIds, setDismissedProgressScanIds] = useState([]);
+
+  const fetchData = useCallback(async ({ silent = false } = {}) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       setError('');
       
       // Fetch scan history
@@ -26,9 +30,9 @@ export default function Dashboard() {
     } catch (err) {
       setError(err.message || 'Gagal terhubung dengan konsol keamanan.');
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
@@ -36,7 +40,29 @@ export default function Dashboard() {
     }, 0);
 
     return () => window.clearTimeout(timeout);
-  }, []);
+  }, [fetchData]);
+
+  const runningScan = scans.find((scan) => scan.status === 'PENDING' || scan.status === 'RUNNING');
+  const activeProgressScan = runningScan && !dismissedProgressScanIds.includes(String(runningScan.id))
+    ? runningScan
+    : null;
+
+  const activeProgress = activeProgressScan ? {
+    scanId: activeProgressScan.id,
+    status: activeProgressScan.status,
+    targetName: activeProgressScan.targetName,
+    catalog: activeProgressScan.targetType === 'WEB_URL' ? passiveWebScanCatalog : repositoryScanCatalog,
+  } : null;
+
+  useEffect(() => {
+    if (!runningScan) return undefined;
+
+    const interval = window.setInterval(() => {
+      fetchData({ silent: true });
+    }, 1200);
+
+    return () => window.clearInterval(interval);
+  }, [runningScan, fetchData]);
 
   const confirmDelete = async () => {
     if (!scanToDelete) return;
@@ -360,10 +386,15 @@ export default function Dashboard() {
                               </button>
                             </>
                           ) : (
-                            <span className="text-slate-500 text-xxs italic flex items-center justify-end gap-1 select-none">
+                            <button
+                              type="button"
+                              onClick={() => setDismissedProgressScanIds((current) => current.filter((id) => id !== String(scan.id)))}
+                              className="text-slate-500 hover:text-blue-300 text-xxs italic flex items-center justify-end gap-1 select-none transition-colors"
+                              title="Tampilkan popup progres scan"
+                            >
                               <div className="w-2.5 h-2.5 border-2 border-slate-500/30 border-t-slate-400 rounded-full animate-spin"></div>
-                              <span>Menganalisis...</span>
-                            </span>
+                              <span>Lihat progres...</span>
+                            </button>
                           )}
 
                           {scan.status !== 'PENDING' && scan.status !== 'RUNNING' && (
@@ -422,6 +453,15 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
+      )}
+
+      {activeProgress && (
+        <ScanProgressModal
+          key={activeProgress.scanId}
+          scanProgress={activeProgress}
+          onAction={() => setDismissedProgressScanIds((current) => [...current, String(activeProgress.scanId)])}
+          actionLabel="Sembunyikan sementara"
+        />
       )}
     </div>
   );
