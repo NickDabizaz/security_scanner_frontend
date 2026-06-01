@@ -1,0 +1,100 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-cyber-900 text-slate-100 font-sans antialiased overflow-x-hidden;
+    background-image: 
+      radial-gradient(at 0% 0%, rgba(37, 99, 235, 0.08) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.05) 0px, transparent 50%),
+      radial-gradient(at 50% 50%, rgba(37, 99, 235, 0.03) 0px, transparent 50%);
+    background-attachment: fixed;
+  }
+}
+
+/* Glassmorphism custom classes */
+.glass-panel {
+  @apply bg-cyber-800/60 backdrop-blur-md border border-white/5 shadow-glass rounded-2xl;
+}
+
+.glass-panel-accent {
+  @apply bg-cyber-800/60 backdrop-blur-md border border-cyber-accent/20 shadow-glass-accent rounded-2xl;
+}
+
+.glass-input {
+  @apply bg-cyber-900/50 border border-white/10 rounded-xl px-4 py-3 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyber-accent focus:ring-1 focus:ring-cyber-accent transition-all duration-300;
+}
+
+.glass-button {
+  @apply bg-cyber-accent hover:bg-cyber-accent/90 text-white font-medium px-6 py-3 rounded-xl transition-all duration-300 hover:shadow-glass-accent active:scale-95 flex items-center justify-center gap-2;
+}
+
+.glass-button-secondary {
+  @apply bg-white/5 hover:bg-white/10 text-slate-200 border border-white/10 font-medium px-6 py-3 rounded-xl transition-all duration-300 active:scale-95 flex items-center justify-center gap-2;
+}
+
+/* Beautiful Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-cyber-900;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-cyber-700/80 rounded-full hover:bg-cyber-600;
+}
+
+/* Micro-animations and hover transitions */
+.hover-card-trigger {
+  @apply transition-all duration-300 hover:-translate-y-1 hover:border-white/10;
+}
+
+/* =========================================================================
+   GOLD-STANDARD PROFESSIONAL PRINT & PDF STYLES
+   ========================================================================= */
+@media print {
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  html, body {
+    background-color: white !important;
+    background-image: none !important;
+    color: #0f172a !important; /* text-slate-900 */
+    font-family: 'Inter', -apple-system, sans-serif !important;
+  }
+
+  /* Reset layout constraints and background gradients */
+  .min-h-screen, main, div, section, header, footer {
+    background-color: transparent !important;
+    background-image: none !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  /* Force clean code wrapping to prevent text cutting */
+  pre, code {
+    white-space: pre-wrap !important;
+    word-break: break-all !important;
+    font-size: 9px !important;
+    color: #1e293b !important;
+  }
+
+  /* Page break rules for structured cataloging */
+  .page-break-inside-avoid {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  @page {
+    margin: 15mm;
+  }
+}
+
