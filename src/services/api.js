@@ -73,10 +73,16 @@ export const authService = {
 };
 
 export const scanService = {
-  createLocalScan: (file, authorizationConfirmed) => {
+  getRuleCatalog: () => {
+    return makeRequest('/scans/rules', { method: 'GET' });
+  },
+  createLocalScan: (file, authorizationConfirmed, selectedRules = null) => {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('authorizationConfirmed', String(authorizationConfirmed));
+    if (Array.isArray(selectedRules) && selectedRules.length > 0) {
+      formData.append('selectedRules', JSON.stringify(selectedRules));
+    }
 
     // For file uploads, we delete the Content-Type header so the browser sets it automatically with the boundary parameters
     const token = localStorage.getItem('grfyn_token');
@@ -103,10 +109,10 @@ export const scanService = {
       body: JSON.stringify({ url, authorizationConfirmed }),
     });
   },
-  createGithubScan: (repoUrl, branch, authorizationConfirmed) => {
+  createGithubScan: (repoUrl, branch, authorizationConfirmed, selectedRules = null) => {
     return makeRequest('/scans/github', {
       method: 'POST',
-      body: JSON.stringify({ repoUrl, branch, authorizationConfirmed }),
+      body: JSON.stringify({ repoUrl, branch, authorizationConfirmed, selectedRules }),
     });
   },
   getHistory: () => {
@@ -117,6 +123,9 @@ export const scanService = {
   },
   deleteScan: (id) => {
     return makeRequest(`/scans/${id}`, { method: 'DELETE' });
+  },
+  cancelScan: (id) => {
+    return makeRequest(`/scans/${id}/cancel`, { method: 'POST' });
   },
   rescan: (id) => {
     return makeRequest(`/scans/${id}/rescan`, { method: 'POST' });

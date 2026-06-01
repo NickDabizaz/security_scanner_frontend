@@ -127,14 +127,14 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* 4. 50-RULE DEFENSIVE CATALOG */}
+      {/* 4. 100-RULE DEFENSIVE CATALOG */}
       <section id="coverage" className="py-20 max-w-7xl mx-auto px-4 md:px-8 scroll-mt-16">
         <div className="text-center max-w-2xl mx-auto mb-12">
-          <h2 className="text-2xl md:text-3xl font-extrabold text-white mb-3">50 Defensive Repository Checks</h2>
-          <p className="text-slate-500 text-xs uppercase tracking-widest font-semibold">50 jenis pemeriksaan source code read-only</p>
+          <h2 className="text-2xl md:text-3xl font-extrabold text-white mb-3">100 Defensive Repository Checks</h2>
+          <p className="text-slate-500 text-xs uppercase tracking-widest font-semibold">100 jenis pemeriksaan source code read-only</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-5">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-5">
           {scanCategorySummary.map((category) => (
             <div key={category.title} className="glass-panel p-4 border border-white/5">
               <span className="text-[10px] font-extrabold uppercase tracking-wider text-blue-400">{category.title}</span>

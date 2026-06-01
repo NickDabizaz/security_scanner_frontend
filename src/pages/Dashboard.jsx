@@ -50,11 +50,20 @@ export default function Dashboard() {
     ? runningScan
     : null;
 
+  const buildActiveCatalog = (scan) => {
+    if (scan.targetType === 'WEB_URL') return passiveWebScanCatalog;
+    // Show only as many checks as the scan actually selected (null => full 100).
+    if (typeof scan.selectedRuleCount === 'number' && scan.selectedRuleCount > 0) {
+      return repositoryScanCatalog.slice(0, scan.selectedRuleCount);
+    }
+    return repositoryScanCatalog;
+  };
+
   const activeProgress = activeProgressScan ? {
     scanId: activeProgressScan.id,
     status: activeProgressScan.status,
     targetName: activeProgressScan.targetName,
-    catalog: activeProgressScan.targetType === 'WEB_URL' ? passiveWebScanCatalog : repositoryScanCatalog,
+    catalog: buildActiveCatalog(activeProgressScan),
   } : null;
 
   useEffect(() => {
@@ -459,7 +468,20 @@ export default function Dashboard() {
           key={activeProgress.scanId}
           scanProgress={activeProgress}
           onAction={() => setDismissedProgressScanIds((current) => [...current, String(activeProgress.scanId)])}
-          actionLabel="Sembunyikan sementara"
+          onCancel={async () => {
+            try {
+              const data = await scanService.cancelScan(activeProgress.scanId);
+              if (typeof data.remainingCredit === 'number') {
+                const user = JSON.parse(localStorage.getItem('grfyn_user') || '{}');
+                localStorage.setItem('grfyn_user', JSON.stringify({ ...user, credit: data.remainingCredit }));
+              }
+              setDismissedProgressScanIds((current) => [...current, String(activeProgress.scanId)]);
+              fetchData({ silent: true });
+            } catch (cancelError) {
+              setError(cancelError.message || 'Gagal membatalkan scan.');
+            }
+          }}
+          actionLabel={activeProgress.status === 'COMPLETED' ? 'Lihat Hasil' : 'Tutup'}
         />
       )}
     </div>

@@ -1,35 +1,74 @@
 import { useEffect, useRef, useState } from 'react';
-import { AlertCircle, ArrowRight, CheckCircle2, Clock3, ListChecks, LoaderCircle, ShieldCheck } from 'lucide-react';
+import { AlertCircle, ArrowRight, CheckCircle2, Clock3, ListChecks, LoaderCircle, ShieldCheck, Ban } from 'lucide-react';
 
-export default function ScanProgressModal({ scanProgress, onAction, actionLabel }) {
+export default function ScanProgressModal({ scanProgress, onAction, actionLabel, onCancel }) {
   const progressCatalog = scanProgress.catalog;
+  const totalChecks = progressCatalog.length;
   const isProgressActive = ['SUBMITTING', 'PENDING', 'RUNNING'].includes(scanProgress.status);
-  const [completedChecks, setCompletedChecks] = useState(scanProgress.status === 'COMPLETED' ? progressCatalog.length : 0);
+  const isCompleted = scanProgress.status === 'COMPLETED';
+
+  // Cancel confirmation: a scan can only be cancelled while it is still running,
+  // and we have an actual scanId on the server (SUBMITTING has none yet).
+  const canCancel = typeof onCancel === 'function' && isProgressActive && Boolean(scanProgress.scanId);
+  const [confirmingCancel, setConfirmingCancel] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+
+  const handleConfirmCancel = async () => {
+    if (!onCancel) return;
+    setCancelling(true);
+    try {
+      await onCancel();
+    } finally {
+      setCancelling(false);
+      setConfirmingCancel(false);
+    }
+  };
+
+  // While the backend scan runs we don't know its real per-rule progress, so the
+  // animation creeps forward but NEVER reaches the final check until the backend
+  // actually reports COMPLETED. This keeps the modal honest: it can't look
+  // "finished early", and it won't sit stalled and then jump — it only fills to
+  // 100% once `status === 'COMPLETED'` arrives.
+  const ceilingWhileRunning = Math.max(0, totalChecks - 1);
+  const [completedChecks, setCompletedChecks] = useState(isCompleted ? totalChecks : 0);
   const activeCheckRef = useRef(null);
-  const visibleCompletedChecks = completedChecks;
+  const visibleCompletedChecks = isCompleted ? totalChecks : Math.min(completedChecks, ceilingWhileRunning);
 
   useEffect(() => {
-    if (scanProgress.status === 'COMPLETED') {
-      setCompletedChecks(progressCatalog.length);
+    // Snap to full only when the backend confirms completion.
+    if (isCompleted) {
+      setCompletedChecks(totalChecks);
       return undefined;
     }
 
     if (!isProgressActive) return undefined;
 
+    // Creep forward, easing into the last ~10% of checks so the bar lingers
+    // near the end while waiting for the backend instead of finishing on its own.
     const interval = window.setInterval(() => {
-      setCompletedChecks((current) => Math.min(current + 1, progressCatalog.length - 1));
-    }, 180);
+      setCompletedChecks((current) => {
+        if (current >= ceilingWhileRunning) return current;
+        const remaining = ceilingWhileRunning - current;
+        const step = remaining > totalChecks * 0.1 ? 1 : 0;
+        return current + step;
+      });
+    }, 160);
 
     return () => window.clearInterval(interval);
-  }, [isProgressActive, scanProgress.status, progressCatalog.length]);
+  }, [isProgressActive, isCompleted, totalChecks, ceilingWhileRunning]);
 
   useEffect(() => {
     activeCheckRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }, [visibleCompletedChecks]);
 
+  // Bar percentage: cap at 92% while running, jump to 100% only on completion.
+  const progressPercent = isCompleted
+    ? 100
+    : Math.min(92, Math.round((visibleCompletedChecks / Math.max(totalChecks, 1)) * 100));
+
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center bg-cyber-950/85 p-4 backdrop-blur-md animate-fadeIn" role="dialog" aria-modal="true" aria-labelledby="scan-progress-title">
-      <div className="glass-panel w-full max-w-2xl overflow-hidden border border-blue-500/20 shadow-2xl">
+      <div className="glass-panel relative w-full max-w-2xl overflow-hidden border border-blue-500/20 shadow-2xl">
         <div className="border-b border-white/5 bg-slate-950/50 p-5">
           <div className="flex items-start gap-3">
             <div className={`rounded-xl border p-2.5 ${
@@ -57,7 +96,7 @@ export default function ScanProgressModal({ scanProgress, onAction, actionLabel 
                     : 'Proses scan sedang berjalan'}
                 </h2>
                 <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                  {visibleCompletedChecks}/{progressCatalog.length} kontrol
+                  {isCompleted ? totalChecks : visibleCompletedChecks}/{totalChecks} kontrol
                 </span>
               </div>
               <p className="mt-1 truncate text-[10px] font-mono text-slate-400" title={scanProgress.targetName}>
@@ -71,7 +110,7 @@ export default function ScanProgressModal({ scanProgress, onAction, actionLabel 
               className={`h-full rounded-full transition-all duration-500 ${
                 scanProgress.status === 'FAILED' ? 'bg-red-500' : 'bg-gradient-to-r from-blue-500 to-emerald-400'
               }`}
-              style={{ width: `${Math.round((visibleCompletedChecks / progressCatalog.length) * 100)}%` }}
+              style={{ width: `${scanProgress.status === 'FAILED' ? 100 : progressPercent}%` }}
             />
           </div>
         </div>
@@ -89,7 +128,7 @@ export default function ScanProgressModal({ scanProgress, onAction, actionLabel 
 
           <div className="max-h-[340px] space-y-1.5 overflow-y-auto pr-1">
             {progressCatalog.map((check, index) => {
-              const isComplete = scanProgress.status === 'COMPLETED' || index < visibleCompletedChecks;
+              const isComplete = isCompleted || index < visibleCompletedChecks;
               const isCurrent = isProgressActive && index === visibleCompletedChecks;
 
               return (
@@ -138,17 +177,71 @@ export default function ScanProgressModal({ scanProgress, onAction, actionLabel 
             <p className="text-[10px] leading-relaxed text-slate-500">
               Scanner hanya membaca arsip atau response target untuk pelaporan keamanan. Tidak ada eksploitasi atau perubahan data.
             </p>
-            <button
-              type="button"
-              onClick={onAction}
-              disabled={isProgressActive}
-              className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-blue-500/20 bg-blue-600 px-4 py-2.5 text-[10px] font-bold text-white transition-colors hover:bg-blue-500 disabled:opacity-50 disabled:pointer-events-none"
-            >
-              <span>{actionLabel}</span>
-              {scanProgress.status !== 'FAILED' && <ArrowRight className="h-3.5 w-3.5" />}
-            </button>
+
+            {isProgressActive ? (
+              <button
+                type="button"
+                onClick={() => setConfirmingCancel(true)}
+                disabled={!canCancel}
+                className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-red-500/25 bg-red-500/10 px-4 py-2.5 text-[10px] font-bold text-red-300 transition-colors hover:bg-red-500/20 disabled:opacity-40 disabled:pointer-events-none"
+              >
+                <Ban className="h-3.5 w-3.5" />
+                <span>Batalkan Scan</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={onAction}
+                className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-blue-500/20 bg-blue-600 px-4 py-2.5 text-[10px] font-bold text-white transition-colors hover:bg-blue-500"
+              >
+                <span>{actionLabel}</span>
+                {scanProgress.status !== 'FAILED' && <ArrowRight className="h-3.5 w-3.5" />}
+              </button>
+            )}
           </div>
         </div>
+
+        {/* Cancel confirmation overlay */}
+        {confirmingCancel && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center bg-cyber-950/80 p-6 backdrop-blur-sm animate-fadeIn">
+            <div className="w-full max-w-sm rounded-2xl border border-red-500/20 bg-cyber-900 p-5 shadow-2xl">
+              <div className="mb-3 flex items-start gap-3">
+                <div className="rounded-xl border border-red-500/25 bg-red-500/10 p-2 text-red-400">
+                  <Ban className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-extrabold text-white">Batalkan scan ini?</h3>
+                  <p className="mt-1 text-[11px] leading-relaxed text-slate-400">
+                    Apakah Anda yakin ingin membatalkan scan yang sedang berjalan? Proses akan dihentikan dan 5 kredit Anda dikembalikan.
+                  </p>
+                </div>
+              </div>
+              <div className="mt-4 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setConfirmingCancel(false)}
+                  disabled={cancelling}
+                  className="rounded-xl border border-white/10 bg-slate-900/60 px-4 py-2 text-[10px] font-bold text-slate-300 transition-colors hover:border-white/20 disabled:opacity-50"
+                >
+                  Tidak, lanjutkan
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmCancel}
+                  disabled={cancelling}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-red-500/25 bg-red-600 px-4 py-2 text-[10px] font-bold text-white transition-colors hover:bg-red-500 disabled:opacity-60 disabled:pointer-events-none"
+                >
+                  {cancelling ? (
+                    <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                  ) : (
+                    <Ban className="h-3.5 w-3.5" />
+                  )}
+                  <span>Ya, batalkan</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
